@@ -4,7 +4,7 @@ subtitle: "Aplicación Piloto en Vegachí y Remedios, Antioquia"
 author: 
   - name: "Pedro Joaquin Perilla Vargas"
   - name: "Fernán José Severich Díaz"
-date: "04/06/2026"
+date: today
 bibliography: referencias.bib
 format:
   html:
