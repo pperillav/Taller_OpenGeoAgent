@@ -4,7 +4,8 @@ subtitle: "Aplicación Piloto en Vegachí y Remedios, Antioquia"
 author: 
   - name: "Pedro Joaquin Perilla Vargas"
   - name: "Fernán José Severich Díaz"
-date: today
+date: "2024-05-04"
+lang: es
 bibliography: referencias.bib
 format:
   html:
@@ -53,10 +54,10 @@ Antes de iniciar el análisis geomático, el plugin OpenGeoAgent debe estar inst
 5. Posteriormente hay que familiarizarse con el menú desplegable **Agent mode**.
 
 ::: {.callout-tip title="Documentación del Plugin"}
-Para obtener instrucciones detalladas, visite la documentación oficial de GeoAgent [@wu2026geoagent]: [https://geoagent.gishub.org/qgis-plugin/](https://geoagent.gishub.org/qgis-plugin/)
+Para obtener instrucciones detalladas, se puede visitar la documentación oficial de GeoAgent [@wu2026geoagent]: [https://geoagent.gishub.org/qgis-plugin/](https://geoagent.gishub.org/qgis-plugin/)
 :::
 
-![Insertar Evidencia: Pantallazo de su Panel de Configuración de OpenGeoAgent](images/pantallazo_config.png)
+![Pantallazo del Panel de Configuración de OpenGeoAgent](images/pantallazo_config.png)
 
 ---
 
@@ -64,7 +65,18 @@ Para obtener instrucciones detalladas, visite la documentación oficial de GeoAg
 
 Alternaremos entre los diferentes Modos de Agente disponibles en OpenGeoAgent para completar cada fase metodológica.
 
-## Tarea 1: Adquisición de Datos (Modo: GEE Data Catalogs)
+## Tarea 1: Localización y Encuadre (Modo: General QGIS)
+
+**Objetivo:** Centrar el proyecto en la zona de estudio (Vegachí y Remedios, Antioquia) para definir el área de influencia de las consultas posteriores en la nube.
+
+* **Modo de Agente:** `General QGIS`
+* **Prompt Usado:**
+
+> "Search for the municipalities of 'Vegachí' and 'Remedios' in Antioquia, Colombia. Zoom the map canvas to an extent that encompasses both administrative boundaries. Once positioned, create a temporary scratch polygon layer named 'Study_Area_Buffer' that represents this bounding box to use as a spatial reference for the following analysis."
+
+![Lienzo de QGIS mostrando el encuadre de la zona de estudio como resultado del prompt](images/evidencia_tarea1.png)
+
+## Tarea 2: Adquisición de Datos (Modo: GEE Data Catalogs)
 
 **Objetivo:** Obtener el Modelo Digital de Elevación (SRTM 30m) y la Radiación Global Horizontal anual (ERA5-Land) superando los mapas estáticos tradicionales [@upme2015atlas].
 
@@ -72,9 +84,11 @@ Alternaremos entre los diferentes Modos de Agente disponibles en OpenGeoAgent pa
 * **Prompt Usado:**
   > "Read the current QGIS canvas extent for the Vegachí and Remedios area. Search the Google Earth Engine catalog for the USGS/SRTMGL1_003 dataset. Load the elevation band as a new raster layer named 'DEM_SRTM', applying a standard terrain color ramp based on the local min and max values. Next, query the ECMWF/ERA5_LAND/MONTHLY_AGGR collection for the year 2023, calculate the annual mean for the 'surface_solar_radiation_downwards_sum' band, and add it to the project as 'GHI_Annual'. Apply a singleband pseudocolor renderer to 'GHI_Annual' using the local canvas extent to stretch the min and max statistics."
 
-![Insertar Evidencia: Lienzo de QGIS mostrando las capas DEM y GHI cargadas](images/evidencia_tarea1.png)
+![Lienzo de QGIS mostrando las capas DEM y GHI cargadas](images/evidencia_tarea2.png)
 
-## Tarea 2: Derivación Geomorfométrica (Modo: General QGIS)
+Las tareas siguientes se enfocan en el análisis geomorfométrico y la simulación de sombreado, utilizando los datos adquiridos para evaluar la aptitud del terreno para la instalación de paneles solares. Estas tareas se realizarán en etapas posteriores, utilizando los modos de agente correspondientes para cada tipo de análisis, una vez que se tengan modelos de elevación con la resolución adecuada para la zona de estudio, por lo cual, preliminarmente se dejan planteadas.
+
+## Tarea 3: Derivación Geomorfométrica (Modo: General QGIS)
 
 **Objetivo:** Calcular la pendiente y orientación, y crear una máscara booleana para áreas con pendientes menores a 15 grados.
 
@@ -83,31 +97,22 @@ Alternaremos entre los diferentes Modos de Agente disponibles en OpenGeoAgent pa
   > "Using the active 'DEM_SRTM' layer, write and execute a PyQGIS script to calculate the Slope (in degrees). Then, use the Raster Calculator to create a boolean mask where the Slope is less than 15 degrees. Name this output 'Suitable_Slope_Mask' and add it to the canvas."
 
 
-## Tarea 3: Simulación de Sombreado Solar (Modo: WhiteboxTools)
+## Tarea 4: Simulación de Sombreado Solar (Modo: WhiteboxTools)
 Objetivo: Simular el efecto del sombreado topográfico sobre un arreglo solar fijo, asumiendo una geometría estándar [@pvgismanual].
 
-Modo de Agente: WhiteboxTools
+* **Modo de Agente:** `WhiteboxTools`
 
-Prompt Usado:
+* **Prompt Planteado:**
 
 > "Using the WhiteboxTools provider, calculate a Hillshade for the 'DEM_SRTM' layer. Set the solar azimuth to 180 degrees (South) and the altitude to 45 degrees. Name the output 'Topographic_Shading'. Finally, generate a PyQGIS script to intersect this shading layer with the 'Suitable_Slope_Mask'."
 
-## Tarea 4: Contexto Ambiental (Modo: STAC)
 
-Objetivo: Cargar imágenes satelitales recientes para inspeccionar visualmente la cobertura del suelo.
-
-Modo de Agente: STAC
-
-Prompt Usado:
-
-> "Read the current map extent as a WGS84 bounding box. Search the Planetary Computer catalog for Sentinel-2 L2A imagery from the last 3 months with less than 10% cloud cover. Add the preferred visual asset (true color or false color) directly to the QGIS project."
 
 # Resultados Finales y Conclusiones
 Eficiencia Metodológica: La integración de la capa GeoAgent [@wu2026geoagent] en el entorno de QGIS reduce significativamente el tiempo empleado en la extracción de series temporales complejas y el geoprocesamiento de modelos de elevación.
 
-Evaluación Multicriterio Dinámica: A diferencia de las evaluaciones estáticas, el uso de modos específicos (General QGIS y WhiteboxTools) facilitó la creación rápida de máscaras booleanas y simulaciones de sombreado, demostrando ser una aproximación robusta para delimitar áreas físicamente viables.
+Evaluación Multicriterio Dinámica: A diferencia de las evaluaciones estáticas, el uso de modos específicos (General QGIS y WhiteboxTools) facilita la creación rápida mediante prompts formulados, de máscaras booleanas y simulaciones de sombreado, demostrando ser una aproximación robusta para delimitar áreas físicamente viables.
 
-Trazabilidad: Las características integradas de OpenGeoAgent, como la capacidad de exportar directamente el código de PyQGIS utilizado, garantizan que el modelo espacial de aptitud sea totalmente auditable.
 
 # Referencias
 ::: {#refs}
